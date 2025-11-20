@@ -16,6 +16,8 @@
                         'bvg-yellow': '#FFD700',
                         'bvg-blue': '#005A9C',
                         'bvg-dark': '#1F2937',
+                        'bvg-brown': '#4B2E05',
+                        'bvg-orange': '#FF6F00',
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -42,36 +44,43 @@
 </head>
 <body class="bg-gray-100 min-h-screen p-4 flex items-start justify-center font-sans">
 
-    <div id="app-container" class="w-full max-w-lg bg-white rounded-xl shadow-2xl p-6 md:p-8">
-        <header class="text-center mb-6">
-            <p id="status-message" class="text-sm text-gray-500 mt-2">Loading real-time data...</p>
-        </header>
+    <!-- Main Container: Uses the provided image path as background -->
+    <div id="app-container" 
+         class="w-full max-w-lg rounded-xl shadow-2xl bg-cover bg-center"
+         style="background-image: url('img/pattern.png');">
+        
+        <!-- Inner content wrapper is now fully opaque white -->
+        <div class="bg-white/10 rounded-xl p-6 md:p-8">
+            <header class="text-center mb-6">
+                <p id="status-message" class="text-sm text-gray-500 mt-2">Loading real-time data...</p>
+            </header>
 
-        <!-- Frankfurter Allee Section (S41/S42) -->
-        <section class="mb-8 p-4 bg-bvg-blue/10 rounded-lg shadow-inner">
-            <h2 class="text-xl font-bold text-bvg-blue mb-4">S+U Frankfurter Allee (S41/S42)</h2>
-            <div id="fa-departures" class="space-y-3">
-                <!-- S41/S42 departures will be injected here -->
-            </div>
-        </section>
+            <!-- Frankfurter Allee Section (S41/S42) -->
+            <section class="mb-8 p-4 bg-bvg-orange rounded-lg shadow-inner">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">S+U Frankfurter Allee (S41/S42)</h2>
+                <div id="fa-departures" class="space-y-3">
+                    <!-- S41/S42 departures will be injected here -->
+                </div>
+            </section>
 
-        <!-- Samariterstraße Section (U5) -->
-        <section class="mb-6 p-4 bg-yellow-100 rounded-lg shadow-inner">
-            <h2 class="text-xl font-bold text-gray-800 mb-4">U Samariterstraße (U5)</h2>
-            <div id="sam-departures" class="space-y-3">
-                <!-- U5 departures will be injected here -->
-            </div>
-        </section>
+            <!-- Samariterstraße Section (U5) -->
+            <section class="mb-8 p-4 bg-bvg-brown rounded-lg shadow-inner">
+                <h2 class="text-xl font-bold text-white mb-4">U Samariterstraße (U5)</h2>
+                <div id="sam-departures" class="space-y-3">
+                    <!-- U5 departures will be injected here -->
+                </div>
+            </section>
 
 
-        <button onclick="loadAllDepartures();"
-                class="w-full mt-8 py-3 bg-bvg-blue text-white font-bold rounded-lg shadow-lg hover:bg-bvg-blue/90 transition duration-200 focus:outline-none focus:ring-4 focus:ring-bvg-blue/50">
-            Refresh All Departures
-        </button>
+            <button onclick="loadAllDepartures();"
+                    class="w-full mt-8 py-3 bg-bvg-yellow text-black font-bold rounded-lg shadow-lg hover:bg-bvg-blue/90 transition duration-200 focus:outline-none focus:ring-4 focus:ring-bvg-blue/50">
+                Refresh All Departures
+            </button>
 
-        <footer class="mt-4 text-xs text-center text-gray-400">
-            Data provided by v6.vbb.transport.rest (BVG/VBB)
-        </footer>
+            <footer class="mt-4 text-xs text-center text-gray-400">
+                Data provided by v6.vbb.transport.rest (BVG/VBB)
+            </footer>
+        </div>
     </div>
 
     <script>
@@ -80,9 +89,9 @@
         // The ID for S+U Frankfurter Allee (S41/S42)
         const FRANKFURTER_ALLEE_ID = "900120001";
         // The ID for U Samariterstraße (U5)
-        const SAMARITERSTRASSE_ID = "900120009";
+        const SAMARITERSTRASSE_ID = "900120009"; 
         // Number of results to display per section
-        const RESULT_COUNT = 6; 
+        const RESULT_COUNT = 4; 
 
         // Utility function to format the time difference
         function formatMinutesUntil(isoTime) {
