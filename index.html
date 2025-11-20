@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Transit Departures: FA & Sam</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configure Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'bvg-yellow': '#FFD700',
+                        'bvg-blue': '#005A9C',
+                        'bvg-dark': '#1F2937',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom styles for line icons */
+        .line-icon {
+            @apply font-bold text-xs p-1 rounded-sm w-8 h-8 flex items-center justify-center shadow-md;
+        }
+
+        /* Generic line colors */
+        .U { background-color: #007548; color: white; } /* U-Bahn (Subway) - General Green/Blue */
+        .S { background-color: #007299; color: white; } /* S-Bahn (Urban Rail) */
+        .M { background-color: #E30013; color: white; } /* MetroTram/Bus */
+        .T { background-color: #E30013; color: white; } /* Tram */
+        .Bus { background-color: #900088; color: white; } /* Bus */
+        .RE { background-color: #16A34A; color: white; } /* Regional Express */
+        .default { background-color: #6B7280; color: white; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 flex items-start justify-center font-sans">
+
+    <div id="app-container" class="w-full max-w-lg bg-white rounded-xl shadow-2xl p-6 md:p-8">
+        <header class="text-center mb-6">
+            <h1 class="text-3xl font-extrabold text-bvg-dark">Local Transit Departures</h1>
+            <p id="status-message" class="text-sm text-gray-500 mt-2">Loading real-time data...</p>
+        </header>
+
+        <!-- Frankfurter Allee Section (S41/S42) -->
+        <section class="mb-8 p-4 bg-bvg-blue/10 rounded-lg shadow-inner">
+            <h2 class="text-xl font-bold text-bvg-blue mb-4">S+U Frankfurter Allee (S41/S42)</h2>
+            <div id="fa-departures" class="space-y-3">
+                <!-- S41/S42 departures will be injected here -->
+            </div>
+        </section>
+
+        <!-- Samariterstraße Section (U5) -->
+        <section class="mb-6 p-4 bg-yellow-100 rounded-lg shadow-inner">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">U Samariterstraße (U5)</h2>
+            <div id="sam-departures" class="space-y-3">
+                <!-- U5 departures will be injected here -->
+            </div>
+        </section>
+
+
+        <button onclick="loadAllDepartures();"
+                class="w-full mt-8 py-3 bg-bvg-blue text-white font-bold rounded-lg shadow-lg hover:bg-bvg-blue/90 transition duration-200 focus:outline-none focus:ring-4 focus:ring-bvg-blue/50">
+            Refresh All Departures
+        </button>
+
+        <footer class="mt-4 text-xs text-center text-gray-400">
+            Data provided by v6.vbb.transport.rest (BVG/VBB)
+        </footer>
+    </div>
+
+    <script>
+        // API Configuration
+        const BASE_API_URL = "https://v6.vbb.transport.rest";
+        // The ID for S+U Frankfurter Allee (S41/S42)
+        const FRANKFURTER_ALLEE_ID = "900120001";
+        // The ID for U Samariterstraße (U5)
+        const SAMARITERSTRASSE_ID = "900120005";
+        // Number of results to display per section
+        const RESULT_COUNT = 6; 
+
+        // Utility function to format the time difference
+        function formatMinutesUntil(isoTime) {
+            const departureTime = new Date(isoTime);
+            const now = new Date();
+            const diffMs = departureTime - now;
+            const minutes = Math.floor(diffMs / 60000);
+
+            if (minutes <= 0) {
+                return 'NOW';
+            } else if (minutes === 1) {
+                return '1 min';
+            } else {
+                return `${minutes} min`;
+            }
+        }
+
+        // Utility function to get the full time (HH:MM)
+        function formatTime(isoTime) {
+            return new Date(isoTime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Function to create the HTML for a single departure
+        function createDepartureHTML(departure) {
+            const lineName = departure.line.name.startsWith('Bus ') ? departure.line.name.split(' ')[1] : departure.line.name;
+            const lineType = departure.line.product; // 'suburban', 'subway', 'tram', 'bus'
+            // Determine the CSS class prefix (S, U, Bus, etc.)
+            const linePrefix = lineType === 'subway' ? 'U' : (lineType === 'suburban' ? 'S' : (lineType === 'tram' ? lineName.charAt(0) : 'Bus'));
+            
+            const destination = departure.direction;
+            const minutesUntil = formatMinutesUntil(departure.when || departure.plannedWhen);
+            const actualTime = formatTime(departure.when || departure.plannedWhen);
+            const delayMinutes = Math.floor((departure.delay || 0) / 60);
+
+            // Determine if there is a delay
+            const delayClass = delayMinutes > 0 ? 'text-red-500 font-semibold' : 'text-green-600 font-medium';
+
+            return `
+                <div class="flex items-center p-3 bg-white rounded-lg transition duration-150 hover:bg-gray-50 shadow-md border border-gray-100">
+                    <!-- Line Icon -->
+                    <div class="line-icon ${linePrefix.replace(/[^a-zA-Z]/g, '')}">
+                        ${lineName}
+                    </div>
+
+                    <!-- Details -->
+                    <div class="flex-grow ml-3">
+                        <p class="text-sm md:text-base font-semibold text-gray-800">${destination}</p>
+                        <p class="text-xs text-gray-500 mt-0.5">
+                            Platform: ${departure.platform || '-'}
+                        </p>
+                    </div>
+
+                    <!-- Time and Delay -->
+                    <div class="text-right ml-4 min-w-[70px]">
+                        <p class="text-xl font-extrabold text-bvg-dark leading-none">${actualTime}</p>
+                        <p class="text-xs ${delayClass} leading-tight mt-0.5">
+                            ${minutesUntil}
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Function to fetch and render departures for a single station/line combination
+        async function fetchAndRenderDepartures(stopId, lineNames, targetElementId) {
+            const listElement = document.getElementById(targetElementId);
+            listElement.innerHTML = '<div class="text-center py-4 text-gray-400 text-sm">Loading...</div>';
+
+            // Fetch more results initially to ensure we get enough after filtering
+            const url = `${BASE_API_URL}/stops/${stopId}/departures?results=20&remarks=false`; 
+
+            try {
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const departures = data.departures || [];
+
+                // Filter to show ONLY the requested lines (e.g., S41/S42 or U5)
+                const filteredDepartures = departures.filter(d => 
+                    d.line && lineNames.includes(d.line.name)
+                );
+
+                if (filteredDepartures.length === 0) {
+                    listElement.innerHTML = '<div class="text-center py-4 text-gray-600 font-medium">No services currently running.</div>';
+                    return;
+                }
+
+                // Generate HTML for the next N filtered departures
+                const htmlContent = filteredDepartures.slice(0, RESULT_COUNT).map(createDepartureHTML).join('');
+                listElement.innerHTML = htmlContent;
+
+            } catch (error) {
+                console.error(`Failed to fetch departures for ${stopId}:`, error);
+                listElement.innerHTML = `
+                    <div class="text-center py-4 bg-red-100 text-red-700 rounded-md p-2">
+                        <p class="text-sm">Error loading data.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Main coordination function to load all departure boards
+        function loadAllDepartures() {
+            const statusElement = document.getElementById('status-message');
+            statusElement.textContent = 'Refreshing data...';
+
+            // 1. Frankfurter Allee (S41/S42)
+            const faPromise = fetchAndRenderDepartures(
+                FRANKFURTER_ALLEE_ID, 
+                ['S41', 'S42'], 
+                'fa-departures'
+            );
+
+            // 2. Samariterstraße (U5)
+            const samPromise = fetchAndRenderDepartures(
+                SAMARITERSTRASSE_ID, 
+                ['U5'], 
+                'sam-departures'
+            );
+
+            // Update status once both promises are resolved
+            Promise.all([faPromise, samPromise])
+                .then(() => {
+                    statusElement.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+                })
+                .catch(error => {
+                    // Note: individual fetchAndRenderDepartures handles its own error display
+                    statusElement.textContent = `Error updating some data: ${new Date().toLocaleTimeString()}`;
+                    console.error("One or more departure fetches failed:", error);
+                });
+        }
+
+        // Initialize the app on page load
+        window.onload = function() {
+            // Start fetching data immediately
+            loadAllDepartures();
+
+            // Set up auto-refresh every 30 seconds
+            setInterval(loadAllDepartures, 30000);
+        };
+    </script>
+</body>
+</html>
