@@ -43,7 +43,6 @@
 
     <div id="app-container" class="w-full max-w-lg bg-white rounded-xl shadow-2xl p-6 md:p-8">
         <header class="text-center mb-6">
-            <h1 class="text-3xl font-extrabold text-bvg-dark">Local Transit Departures</h1>
             <p id="status-message" class="text-sm text-gray-500 mt-2">Loading real-time data...</p>
         </header>
 
@@ -80,7 +79,7 @@
         // The ID for S+U Frankfurter Allee (S41/S42)
         const FRANKFURTER_ALLEE_ID = "900120001";
         // The ID for U Samariterstraße (U5)
-        const SAMARITERSTRASSE_ID = "900120005";
+        const SAMARITERSTRASSE_ID = "900120009";
         // Number of results to display per section
         const RESULT_COUNT = 6; 
 
@@ -165,9 +164,30 @@
                 const departures = data.departures || [];
 
                 // Filter to show ONLY the requested lines (e.g., S41/S42 or U5)
-                const filteredDepartures = departures.filter(d => 
-                    d.line && lineNames.includes(d.line.name)
-                );
+                const filteredDepartures = departures.filter(d => {
+                    if (!d.line) return false;
+                    
+                    const apiLineName = d.line.name;
+                    
+                    // 1. Check for exact match (works for S41, S42, or if U5 is fully reported)
+                    if (lineNames.includes(apiLineName)) {
+                        return true;
+                    }
+                    
+                    // 2. Special check for U-Bahn lines (subway), which sometimes omit the 'U'
+                    if (d.line.product === 'subway') {
+                        // Check if the API name (e.g., '5') matches the number part of a requested line name (e.g., 'U5')
+                        const requestedLineNumberMatch = lineNames.some(requestedName => {
+                            return requestedName.startsWith('U') && requestedName.substring(1) === apiLineName;
+                        });
+
+                        if (requestedLineNumberMatch) {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                });
 
                 if (filteredDepartures.length === 0) {
                     listElement.innerHTML = '<div class="text-center py-4 text-gray-600 font-medium">No services currently running.</div>';
