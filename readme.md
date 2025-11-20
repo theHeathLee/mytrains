@@ -13,4 +13,4 @@ All real-time transport data is sourced from the VBB/BVG via the third-party API
 
 The visual elements (colors, pattern) are inspired by the official BVG (Berliner Verkehrsbetriebe) design guidelines.
 
-If the background image (img/pattern.png) is an official BVG asset, its use is subject to the BVG's design and licensing terms. This project provides fair-use attribution and is not intended for commercial use without proper licensing.
+This project provides fair-use attribution and is not intended for commercial use without proper licensing.
